@@ -2,7 +2,7 @@ import { FileSpreadsheet, Search } from 'lucide-react'
 import { useState } from 'react'
 import { initialDrivers } from '../data/mockData'
 
-export default function Laporan({ bookings, vehicles, currentUser, addLog }) {
+export default function Laporan({ bookings = [], vehicles = [], currentUser, addLog }) {
     const [searchTerm, setSearchTerm] = useState('')
 
     const handleExport = () => {
@@ -18,17 +18,19 @@ export default function Laporan({ bookings, vehicles, currentUser, addLog }) {
         ]
 
         const rows = bookings.map((b) => [
-            b.id,
-            b.employeeName,
-            vehicles.find((v) => v.id === b.vehicleId)?.name || '-',
-            initialDrivers.find((d) => d.id === b.driverId)?.name || '-',
-            b.startDate,
-            b.endDate,
-            b.status,
-            b.createdAt,
+            b?.id ?? '-',
+            b?.employeeName || '-',
+            vehicles.find((v) => Number(v.id) === Number(b?.vehicleId))?.name || '-',
+            initialDrivers.find((d) => Number(d.id) === Number(b?.driverId))?.name || '-',
+            b?.startDate || '-',
+            b?.endDate || '-',
+            b?.status || '-',
+            b?.createdAt || '-',
         ])
 
-        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
+        const csvContent =
+            '\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
+
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
@@ -39,14 +41,20 @@ export default function Laporan({ bookings, vehicles, currentUser, addLog }) {
         link.click()
         document.body.removeChild(link)
 
-        addLog(currentUser.name, 'Melakukan Export Laporan ke Excel/CSV')
+        if (currentUser?.name) {
+            addLog(currentUser.name, 'Melakukan Export Laporan ke Excel/CSV')
+        }
     }
 
     const filteredBookings = bookings.filter((b) => {
-        const search = searchTerm.toLowerCase()
-        const matchName = b.employeeName.toLowerCase().includes(search)
-        const matchVehicle = (vehicles.find((v) => v.id === b.vehicleId)?.name || '').toLowerCase().includes(search)
-        const matchStatus = b.status.toLowerCase().includes(search)
+        const search = (searchTerm || '').toLowerCase()
+        const matchName = (b?.employeeName || '').toLowerCase().includes(search)
+        const matchVehicle = (
+            vehicles.find((v) => Number(v.id) === Number(b?.vehicleId))?.name || ''
+        )
+            .toLowerCase()
+            .includes(search)
+        const matchStatus = (b?.status || '').toLowerCase().includes(search)
 
         return matchName || matchVehicle || matchStatus
     })
@@ -55,8 +63,12 @@ export default function Laporan({ bookings, vehicles, currentUser, addLog }) {
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                 <div>
-                    <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Laporan Periodik</h2>
-                    <p className="text-slate-500 mt-1">Pantau dan unduh laporan riwayat pemesanan.</p>
+                    <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                        Laporan Periodik
+                    </h2>
+                    <p className="text-slate-500 mt-1">
+                        Pantau dan unduh laporan riwayat pemesanan.
+                    </p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -99,40 +111,52 @@ export default function Laporan({ bookings, vehicles, currentUser, addLog }) {
 
                         <tbody className="divide-y divide-slate-100 text-sm">
                             {filteredBookings.length > 0 ? (
-                                filteredBookings.map((b) => (
-                                    <tr key={b.id} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="py-4 px-6 font-bold text-slate-600">#{b.id}</td>
-                                        <td className="py-4 px-6">
-                                            <p className="font-bold text-slate-800">{b.employeeName}</p>
-                                            <p className="text-xs text-slate-400 font-medium mt-0.5">Entry: {b.createdAt}</p>
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            <p className="font-semibold text-slate-800">
-                                                {vehicles.find((v) => v.id === b.vehicleId)?.name}
-                                            </p>
-                                            <p className="text-xs text-slate-500 mt-0.5 bg-slate-100 inline-block px-2 py-0.5 rounded">
-                                                Driver: {initialDrivers.find((d) => d.id === b.driverId)?.name}
-                                            </p>
-                                        </td>
-                                        <td className="py-4 px-6 font-medium text-slate-600">
-                                            <div className="bg-slate-50 px-3 py-1.5 rounded-lg inline-block border border-slate-100 whitespace-nowrap">
-                                                {b.startDate} <span className="text-slate-400 mx-1">-</span> {b.endDate}
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6">
-                                            <span
-                                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${b.status === 'Disetujui'
-                                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                                        : b.status === 'Ditolak' || b.status === 'Dibatalkan'
-                                                            ? 'bg-red-50 text-red-600 border-red-200'
-                                                            : 'bg-amber-50 text-amber-600 border-amber-200'
-                                                    }`}
-                                            >
-                                                {b.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))
+                                filteredBookings.map((b) => {
+                                    const vehicleName =
+                                        vehicles.find((v) => Number(v.id) === Number(b?.vehicleId))?.name || '-'
+                                    const driverName =
+                                        initialDrivers.find((d) => Number(d.id) === Number(b?.driverId))?.name || '-'
+                                    const status = b?.status || '-'
+
+                                    return (
+                                        <tr key={b?.id} className="hover:bg-slate-50/50 transition-colors">
+                                            <td className="py-4 px-6 font-bold text-slate-600">#{b?.id ?? '-'}</td>
+
+                                            <td className="py-4 px-6">
+                                                <p className="font-bold text-slate-800">{b?.employeeName || '-'}</p>
+                                                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                                    Entry: {b?.createdAt || '-'}
+                                                </p>
+                                            </td>
+
+                                            <td className="py-4 px-6">
+                                                <p className="font-semibold text-slate-800">{vehicleName}</p>
+                                                <p className="text-xs text-slate-500 mt-0.5 bg-slate-100 inline-block px-2 py-0.5 rounded">
+                                                    Driver: {driverName}
+                                                </p>
+                                            </td>
+
+                                            <td className="py-4 px-6 font-medium text-slate-600">
+                                                <div className="bg-slate-50 px-3 py-1.5 rounded-lg inline-block border border-slate-100 whitespace-nowrap">
+                                                    {b?.startDate || '-'} <span className="text-slate-400 mx-1">-</span> {b?.endDate || '-'}
+                                                </div>
+                                            </td>
+
+                                            <td className="py-4 px-6">
+                                                <span
+                                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${status === 'Disetujui'
+                                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                            : status === 'Ditolak' || status === 'Dibatalkan'
+                                                                ? 'bg-red-50 text-red-600 border-red-200'
+                                                                : 'bg-amber-50 text-amber-600 border-amber-200'
+                                                        }`}
+                                                >
+                                                    {status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    )
+                                })
                             ) : (
                                 <tr>
                                     <td colSpan="5" className="py-12 text-center text-slate-500">
