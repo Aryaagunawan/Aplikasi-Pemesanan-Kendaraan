@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Aplikasi-Pemesanan-Kendaraan
 =======
 # React + Vite
